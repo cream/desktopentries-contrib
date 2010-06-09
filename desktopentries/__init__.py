@@ -5,6 +5,8 @@ from ConfigParser import ConfigParser
 from functools import partial
 
 SECTION = 'Desktop Entry'
+DEFAULT_CATEGORIES = set(["AudioVideo", "Audio", "Video", "Development", "Education", "Game", "Graphics",
+"Network", "Office", "Settings", "System", "Utility"])
 
 class DesktopEntry(ConfigParser):
     def __init__(self, filename):
@@ -25,11 +27,14 @@ class DesktopEntry(ConfigParser):
     def get_bool(self, key):
         return ConfigParser.getboolean(self, SECTION, key)
 
-    def has_option(self, key):
+    def has_option_default(self, key):
         return ConfigParser.has_option(self, SECTION, key)
 
-    def get_strings(self, key):
-        return self.get_default(key).strip(';').split(';') # TODO: comma separated?
+    def get_strings(self, key, default=NotImplemented):
+        if not self.has_option_default(key):
+            return default
+        else:
+            return self.get_default(key).strip(';').split(';') # TODO: comma separated?
 
     def get_locale(self, key, locale=''):
         if not locale:
@@ -42,6 +47,17 @@ class DesktopEntry(ConfigParser):
     name = property(partial(get_locale, key='Name'))
     generic_name = property(partial(get_locale, key='GenericName'))
     no_display = property(partial(get_bool, key='NoDisplay'))
+
+    @property
+    def recommended_category(self):
+        for category in self.categories:
+            if category in DEFAULT_CATEGORIES:
+                return category
+        if self.categories:
+            return self.categories[0]
+        else:
+            return None
+
     comment = property(partial(get_locale, key='Comment'))
     icon = property(partial(get_locale, key='Icon'))
     hidden = property(partial(get_bool, key='Hidden'))
@@ -52,15 +68,14 @@ class DesktopEntry(ConfigParser):
     path = property(partial(get_default, key='Path'))
     terminal = property(partial(get_bool, key='Terminal'))
     mime_type = property(partial(get_strings, key='MimeType'))
-    categories = property(partial(get_strings, key='Categories'))
+    categories = property(partial(get_strings, key='Categories', default=()))
     startup_notify = property(partial(get_bool, key='StartupNotify'))
     startup_wmclass = property(partial(get_default, key='StartupWMClass'))
     url = property(partial(get_default, key='URL'))
 
 if __name__ == '__main__':
-    for de in DesktopEntry.get_all():
-        print '*** %r ***' % de
-        for attr in ['comment', 'not_show_in', 'startup_notify', 'get_bool', 'no_display', 'generic_name', 'terminal', 'version', 'hidden', 'type', 'try_exec', 'mime_type', 'get_locale', 'get', 'get_strings', 'exec_', 'startup_wmclass', 'path', 'categories', 'icon', 'name', 'url', 'only_show_in']:
-            if de.has_option(attr):
-                print '%s: %r' % (attr, getattr(de, attr))
-
+    import gtk
+    from gtkmenu import to_gtk
+    menu = to_gtk(DesktopEntry.get_all())
+    menu.popup(None, None, None, 1, 0)
+    gtk.main()

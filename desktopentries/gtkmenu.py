@@ -1,5 +1,6 @@
 import gtk
 
+import os
 import re
 from operator import attrgetter, itemgetter
 from subprocess import Popen
@@ -7,8 +8,11 @@ from collections import defaultdict
 
 KICK = re.compile('%[ifFuUck]')
 
-def activate_entry(widget, exec_):
-    exec_ = KICK.sub('', exec_)
+def activate_entry(widget, entry):
+    exec_ = KICK.sub('', entry.exec_)
+    if entry.terminal:
+        term = os.environ.get('TERM', 'xterm')
+        exec_ = '%s -e "%s"' % (term, exec_.encode('string-escape'))
     proc = Popen(exec_, shell=True)
 
 def to_gtk(entries):
@@ -18,7 +22,7 @@ def to_gtk(entries):
         if not category:
             continue
         item = gtk.MenuItem(entry.name)
-        item.connect('activate', activate_entry, entry.exec_)
+        item.connect('activate', activate_entry, entry)
         item.show()
         tree[category].append(item)
     menu = gtk.Menu()

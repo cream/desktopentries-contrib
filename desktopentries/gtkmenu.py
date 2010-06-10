@@ -10,6 +10,21 @@ import gobject
 KICK = re.compile('%[ifFuUck]')
 ICON_SIZE = 16
 
+CATEGORY_ICONS = {
+        "AudioVideo": 'applications-multimedia',
+        "Audio": 'applications-multimedia',
+        "Video": 'applications-multimedia',
+        "Development": 'applications-development',
+        "Education": 'applications-science',
+        "Game": 'applications-games',
+        "Graphics": 'applications-graphics',
+        "Network": 'applications-internet',
+        "Office": 'applications-office',
+        "Settings": 'applications-engineering',
+        "System": 'applications-system',
+        "Utility": 'applications-other',
+}
+
 def activate_entry(widget, entry):
     exec_ = KICK.sub('', entry.exec_)
     if entry.terminal:
@@ -47,7 +62,12 @@ def to_gtk(entries):
         tree[category].append(item)
     menu = gtk.Menu()
     for category, submenu in sorted(tree.iteritems(), key=itemgetter(0)):
-        item = gtk.MenuItem(category)
+        icon = None
+        if category in CATEGORY_ICONS:
+            icon = lookup_icon(CATEGORY_ICONS[category])
+        item = gtk.ImageMenuItem(category)
+        if icon is not None:
+            item.set_image(gtk.image_new_from_pixbuf(icon))
         item.set_submenu(submenu)
         item.show()
         menu.append(item)
